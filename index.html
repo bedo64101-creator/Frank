@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Sana Özel ❤️</title>
+
+<style>
+/* ============================================================
+   TASARIM TOKENLARI — Renkler, tipografi ve temel değişkenler
+   ============================================================ */
+:root{
+  --bg-1: #16081f;      /* en koyu gece moru */
+  --bg-2: #2b0f3a;      /* orta ton mor */
+  --bg-3: #3d1150;      /* daha açık mor */
+  --crimson: #e63950;   /* kırmızı vurgu */
+  --rose: #ff6f9c;      /* pembe vurgu */
+  --violet: #9d4edd;    /* mor vurgu */
+  --gold: #ffd166;      /* sıcak parıltı rengi */
+  --ink: #fdf0f5;       /* açık metin rengi */
+  --ink-soft: rgba(253,240,245,0.72);
+  --glass-bg: rgba(255,255,255,0.07);
+  --glass-border: rgba(255,255,255,0.16);
+  --glass-shadow: rgba(0,0,0,0.35);
+  --font-display: Georgia, 'Times New Roman', 'Palatino Linotype', serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+*{ box-sizing:border-box; }
+html,body{
+  margin:0; padding:0;
+  width:100%; min-height:100%;
+  background: var(--bg-1);
+  color: var(--ink);
+  font-family: var(--font-body);
+  overflow-x:hidden;
+}
+
+/* Erişilebilirlik: hareket azaltma tercihine saygı */
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+::selection{ background: var(--rose); color: #2b0f3a; }
+
+/* ============================================================
+   ARKA PLAN — Yıldız / kalp / parıltı canvası (tüm sahnelerin altında sabit)
+   ============================================================ */
+#bg-canvas{
+  position:fixed; inset:0; z-index:0;
+  width:100%; height:100%;
+  background: radial-gradient(circle at 20% 20%, var(--bg-3), var(--bg-2) 45%, var(--bg-1) 100%);
+}
+
+/* Sahnelerin üstüne hafif bir vinyet ekleyip derinlik katıyoruz */
+#vignette{
+  position:fixed; inset:0; z-index:1; pointer-events:none;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(10,3,15,0.55) 100%);
+}
+
+/* ============================================================
+   SİNEMATİK AÇILIŞ EKRANI
+   ============================================================ */
+#cinematic-loader{
+  position:fixed; inset:0; z-index:100;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background: var(--bg-1);
+  transition: opacity 1.4s ease, visibility 1.4s ease;
+}
+#cinematic-loader.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
+
+.loader-heart{
+  width:56px; height:56px; position:relative; margin-bottom:28px;
+  animation: heartbeat 1.15s ease-in-out infinite;
+}
+.loader-heart::before, .loader-heart::after{
+  content:""; position:absolute; top:0; width:30px; height:46px;
+  background: linear-gradient(160deg, var(--crimson), var(--rose));
+  border-radius:30px 30px 0 0;
+}
+.loader-heart::before{ left:28px; transform:rotate(-45deg); transform-origin:0 100%; }
+.loader-heart::after{ left:-2px; transform:rotate(45deg); transform-origin:100% 100%; }
+@keyframes heartbeat{
+  0%,100%{ transform:scale(1); }
+  25%{ transform:scale(1.15); }
+  40%{ transform:scale(0.95); }
+  55%{ transform:scale(1.1); }
+}
+
+.loader-text{
+  font-family: var(--font-display); font-style: italic;
+  letter-spacing:0.06em; font-size: clamp(0.95rem, 2.5vw, 1.3rem);
+  color: var(--ink-soft);
+  opacity:0; animation: fadeInSoft 1.6s ease forwards 0.4s;
+}
+@keyframes fadeInSoft{ to{ opacity:1; } }
+
+/* ============================================================
+   FİLM / SAHNE YAPISI
+   ============================================================ */
+#film{ position:relative; z-index:2; width:100%; }
+
+.scene{
+  min-height:100dvh; min-height:100vh;
+  width:100%;
+  display:none;
+  align-items:center; justify-content:center;
+  padding: 6vh 5vw;
+  position:relative;
+}
+.scene.active{
+  display:flex;
+  animation: sceneIn 1s cubic-bezier(.22,1,.36,1) both;
+}
+.scene.leaving{
+  animation: sceneOut 0.6s ease both;
+}
+@keyframes sceneIn{
+  from{ opacity:0; transform: scale(1.04) translateY(18px); filter:blur(6px); }
+  to{ opacity:1; transform: scale(1) translateY(0); filter:blur(0); }
+}
+@keyframes sceneOut{
+  from{ opacity:1; transform: scale(1); filter:blur(0); }
+  to{ opacity:0; transform: scale(0.97) translateY(-14px); filter:blur(6px); }
+}
+
+.scene-inner{
+  width:100%; max-width: 720px;
+  text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:1.5rem;
+}
+
+/* Cam efekti (glassmorphism) kart */
+.glass-card{
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 20px 60px var(--glass-shadow);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  width:100%;
+}
+
+.eyebrow{
+  font-size:0.75rem; letter-spacing:0.35em; text-transform:uppercase;
+  color: var(--rose); opacity:0.85; margin:0;
+}
+
+h1,h2{
+  font-family: var(--font-display); font-weight:400; margin:0;
+  background: linear-gradient(120deg, var(--rose), var(--gold) 50%, var(--violet));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  line-height:1.2;
+}
+h1{ font-size: clamp(2rem, 6vw, 3.4rem); font-style:italic; }
+h2{ font-size: clamp(1.6rem, 4.5vw, 2.4rem); font-style:italic; }
+
+p{ font-size: clamp(1rem, 2.2vw, 1.15rem); line-height:1.75; color: var(--ink-soft); margin:0; }
+
+/* Yazının bittiğini belirten yanıp sönen imleç (typewriter) */
+.typewriter::after{
+  content:"|"; display:inline-block; margin-left:2px;
+  animation: blink 0.9s step-end infinite; color: var(--rose);
+}
+.typewriter.done::after{ display:none; }
+@keyframes blink{ 50%{ opacity:0; } }
+
+/* Butonlar */
+.btn{
+  appearance:none; border:none; cursor:pointer;
+  font-family: var(--font-body); font-size:1rem; font-weight:600;
+  letter-spacing:0.03em;
+  padding: 0.9rem 2.1rem; border-radius: 999px;
+  color:#fff;
+  background: linear-gradient(135deg, var(--crimson), var(--rose));
+  box-shadow: 0 12px 30px rgba(230,57,80,0.35);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  min-height:44px;
+}
+.btn:hover{ transform: translateY(-3px) scale(1.03); box-shadow: 0 16px 36px rgba(230,57,80,0.5); }
+.btn:active{ transform: translateY(0) scale(0.98); }
+.btn.ghost{
+  background: transparent; border:1px solid var(--glass-border); color: var(--ink-soft);
+  box-shadow:none; font-weight:500; padding:0.7rem 1.6rem;
+}
+.btn.ghost:hover{ border-color: var(--rose); color:var(--ink); box-shadow:none; }
+
+.btn-row{ display:flex; gap:0.9rem; flex-wrap:wrap; justify-content:center; margin-top:0.5rem; }
+
+/* ============================================================
+   SAHNE 2 — Seni neden seviyorum listesi
+   ============================================================ */
+.reason-list{ list-style:none; margin:0; padding:0; width:100%; text-align:left; display:flex; flex-direction:column; gap:0.9rem; }
+.reason-item{
+  display:flex; align-items:flex-start; gap:0.75rem;
+  opacity:0; transform: translateX(-16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reason-item.show{ opacity:1; transform:translateX(0); }
+.reason-item .heart-bullet{ color: var(--rose); flex-shrink:0; margin-top:0.15rem; }
+
+/* ============================================================
+   SAHNE 3 & 5 — Düzenlenebilir mektup / şiir alanları
+   ============================================================ */
+.editable-hint{
+  font-size:0.75rem; letter-spacing:0.05em; color: var(--gold); opacity:0.85;
+}
+.editable{
+  width:100%; min-height:180px; text-align:left;
+  font-family: var(--font-display); font-size: clamp(1rem, 2.3vw, 1.15rem);
+  line-height:1.85; color: var(--ink);
+  outline:none; white-space:pre-wrap;
+  border-bottom: 1px dashed var(--glass-border);
+  padding-bottom:0.5rem;
+}
+.editable:focus{ border-bottom-color: var(--rose); }
+.editable[contenteditable]:empty:before{ content: attr(data-placeholder); color: var(--ink-soft); }
+.poem-text{ font-style:italic; white-space:pre-line; }
+
+.save-note{ font-size:0.8rem; color: var(--ink-soft); opacity:0; transition:opacity 0.4s ease; }
+.save-note.show{ opacity:1; }
+
+/* ============================================================
+   SAHNE 4 — İltifat kartları
+   ============================================================ */
+.compliment-card{
+  width:100%; min-height:140px;
+  display:flex; align-items:center; justify-content:center;
+  padding: 1.5rem;
+  perspective: 1000px;
+}
+.compliment-text{
+  font-family: var(--font-display); font-style:italic;
+  font-size: clamp(1.15rem, 3vw, 1.5rem);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.compliment-text.swap{ opacity:0; transform: scale(0.92) translateY(6px); }
+
+/* ============================================================
+   SAHNE 6 — Final: büyük kalp animasyonu
+   ============================================================ */
+.big-heart{
+  width: clamp(90px,18vw,150px); height: clamp(90px,18vw,150px);
+  position:relative; margin: 0.5rem 0 1rem;
+  animation: bigHeartbeat 1.4s ease-in-out infinite;
+}
+.big-heart::before, .big-heart::after{
+  content:""; position:absolute; top:0; width:52%; height:80%;
+  background: linear-gradient(160deg, var(--crimson), var(--rose), var(--violet));
+  border-radius: 50% 50% 0 0;
+  box-shadow: 0 0 50px rgba(255,111,156,0.55);
+}
+.big-heart::before{ left:50%; transform:rotate(-45deg); transform-origin:0 100%; }
+.big-heart::after{ left:0; right:50%; transform:rotate(45deg); transform-origin:100% 100%; }
+@keyframes bigHeartbeat{
+  0%,100%{ transform:scale(1); }
+  25%{ transform:scale(1.12); }
+  40%{ transform:scale(0.97); }
+  55%{ transform:scale(1.08); }
+}
+
+/* ============================================================
+   İLERLEME NOKTALARI
+   ============================================================ */
+#progress-dots{
+  position:fixed; bottom:calc(16px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%);
+  z-index:20; display:flex; gap:8px;
+  background: rgba(0,0,0,0.25); backdrop-filter: blur(8px);
+  padding:8px 12px; border-radius:999px;
+  border:1px solid var(--glass-border);
+}
+.dot{ width:7px; height:7px; border-radius:50%; background: rgba(255,255,255,0.3); transition: all 0.4s ease; }
+.dot.active{ background: var(--rose); width:20px; border-radius:5px; box-shadow:0 0 10px var(--rose); }
+
+/* ============================================================
+   MÜZİK DÜĞMESİ
+   ============================================================ */
+#music-toggle{
+  position:fixed; top:calc(16px + env(safe-area-inset-top)); right:16px; z-index:20;
+  width:44px; height:44px; border-radius:50%;
+  background: var(--glass-bg); border:1px solid var(--glass-border);
+  backdrop-filter: blur(12px); color:var(--ink);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; font-size:1.1rem;
+}
+
+/* ============================================================
+   KONFETİ VE KALP YAĞMURU
+   ============================================================ */
+#confetti-container, #heart-rain-container{
+  position:fixed; inset:0; z-index:15; pointer-events:none; overflow:hidden;
+}
+.confetti-piece{
+  position:absolute; top:-5%; width:9px; height:14px; opacity:0.9;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall{
+  to{ transform: translateY(110vh) rotate(540deg); opacity:0.15; }
+}
+.falling-heart{
+  position:absolute; top:-8%; font-size:1.4rem;
+  animation: heartFall linear forwards;
+}
+@keyframes heartFall{
+  to{ transform: translateY(115vh) rotate(25deg); opacity:0; }
+}
+
+/* ============================================================
+   MOBİL UYUM
+   ============================================================ */
+@media (max-width: 480px){
+  .scene{ padding: 5vh 5vw; }
+  .glass-card{ border-radius:18px; }
+  .btn{ width:100%; }
+  .btn-row{ flex-direction:column; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     SİNEMATİK AÇILIŞ
+     ============================================================ -->
+<div id="cinematic-loader">
+  <div class="loader-heart"></div>
+  <p class="loader-text">Bir hikâye başlıyor...</p>
+</div>
+
+<!-- Arka plan: yıldız / kalp / parıltı animasyonu -->
+<canvas id="bg-canvas"></canvas>
+<div id="vignette"></div>
+
+<!-- Konfeti ve kalp yağmuru katmanları -->
+<div id="confetti-container"></div>
+<div id="heart-rain-container"></div>
+
+<!-- Müzik: kendi mp3 dosyanı bu HTML ile aynı klasöre "muzik.mp3" adıyla koy -->
+<audio id="bg-music" loop preload="none">
+  <source src="muzik.mp3" type="audio/mpeg">
+</audio>
+<button id="music-toggle" aria-label="Müziği aç/kapat">🔇</button>
+
+<main id="film">
+
+  <!-- ========================= SAHNE 1 — HOŞ GELDİN ========================= -->
+  <section class="scene active" id="scene-1" data-index="1">
+    <div class="scene-inner glass-card">
+      <p class="eyebrow">Sana özel bir yolculuk</p>
+      <h1 id="s1-title"></h1>
+      <p id="s1-text" class="typewriter"></p>
+      <div class="btn-row">
+        <button class="btn" data-next>Devam Et →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= SAHNE 2 — SENİ NEDEN SEVİYORUM ========================= -->
+  <section class="scene" id="scene-2" data-index="2">
+    <div class="scene-inner glass-card">
+      <p class="eyebrow">Bölüm İki</p>
+      <h2>Seni Neden Seviyorum?</h2>
+      <ul class="reason-list" id="reason-list">
+        <li class="reason-item"><span class="heart-bullet">❤</span><span>Gülüşün, en yorgun günümü bile anlamlı kılıyor.</span></li>
+        <li class="reason-item"><span class="heart-bullet">❤</span><span>Yanımda olduğunda, dünya biraz daha yavaş ve güzel akıyor.</span></li>
+        <li class="reason-item"><span class="heart-bullet">❤</span><span>Bana hep en iyi hâlim olmayı hatırlatıyorsun.</span></li>
+        <li class="reason-item"><span class="heart-bullet">❤</span><span>Sessizliğinde bile huzur buluyorum.</span></li>
+        <li class="reason-item"><span class="heart-bullet">❤</span><span>Küçük detayları önemsemen, seni çok değerli kılıyor.</span></li>
+        <li class="reason-item"><span class="heart-bullet">❤</span><span>Sen, hiç ummadığım anda gelen en güzel sürprizsin.</span></li>
+      </ul>
+      <div class="btn-row">
+        <button class="btn ghost" data-prev>← Geri</button>
+        <button class="btn" data-next>Devam Et →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= SAHNE 3 — SANA BİR MEKTUP ========================= -->
+  <section class="scene" id="scene-3" data-index="3">
+    <div class="scene-inner glass-card">
+      <p class="eyebrow">Bölüm Üç</p>
+      <h2>Sana Bir Mektup</h2>
+      <p class="editable-hint">✏️ Bu metnin üzerine tıklayıp dilediğin gibi düzenleyebilirsin.</p>
+      <div class="editable" id="letter-area" contenteditable="true" data-placeholder="Sevgili... buraya ona yazmak istediğin her şeyi yazabilirsin.">Sevgilim,
+
+Bu satırları yazarken bile gülümsüyorum, çünkü seni düşünmek bana hep iyi geliyor. Hayatımın en güzel tesadüfü sensin; belki de hiç tesadüf değildi, belki de bu hep böyle yazılmıştı.
+
+Seninle geçirdiğim her an, bir sonrakini daha da özel bekletiyor. Zorlandığım günlerde sesini duymak, iyi olduğum günlerde ise seninle paylaşmak istiyorum her şeyi.
+
+Bunu bilmeni istiyorum: yanımda olduğun için minnettarım, ve bu hikâyenin geri kalanını da seninle yazmak istiyorum.
+
+Seni çok seviyorum.</div>
+      <div class="btn-row">
+        <button class="btn ghost" data-prev>← Geri</button>
+        <button class="btn ghost" id="save-letter">Kaydet</button>
+        <button class="btn" data-next>Devam Et →</button>
+      </div>
+      <p class="save-note" id="letter-save-note">Kaydedildi ✓</p>
+    </div>
+  </section>
+
+  <!-- ========================= SAHNE 4 — İLTİFATLAR ========================= -->
+  <section class="scene" id="scene-4" data-index="4">
+    <div class="scene-inner glass-card">
+      <p class="eyebrow">Bölüm Dört</p>
+      <h2>İltifatlar</h2>
+      <div class="compliment-card">
+        <p class="compliment-text" id="compliment-text">Gülüşün bir odayı aydınlatabilir.</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn ghost" data-prev>← Geri</button>
+        <button class="btn" id="new-compliment">✨ Yeni İltifat</button>
+        <button class="btn" data-next>Devam Et →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= SAHNE 5 — ŞİİR ========================= -->
+  <section class="scene" id="scene-5" data-index="5">
+    <div class="scene-inner glass-card">
+      <p class="eyebrow">Bölüm Beş</p>
+      <h2>Şiir</h2>
+      <p class="editable-hint">✏️ Kendi şiirini buraya yazabilirsin.</p>
+      <div class="editable poem-text" id="poem-area" contenteditable="true" data-placeholder="Buraya kendi şiirini yazabilirsin...">Gözlerinde kayboluyorum her defasında,
+Bir bakışın yetiyor bütün telaşıma.
+Sen gülünce, dünya duruyor sanki,
+Ve ben, en huzurlu hâlimi buluyorum orada.</div>
+      <div class="btn-row">
+        <button class="btn ghost" data-prev>← Geri</button>
+        <button class="btn ghost" id="save-poem">Kaydet</button>
+        <button class="btn" data-next>Devam Et →</button>
+      </div>
+      <p class="save-note" id="poem-save-note">Kaydedildi ✓</p>
+    </div>
+  </section>
+
+  <!-- ========================= SAHNE 6 — FİNAL ========================= -->
+  <section class="scene" id="scene-6" data-index="6">
+    <div class="scene-inner glass-card">
+      <p class="eyebrow">Son Bölüm</p>
+      <div class="big-heart" aria-hidden="true"></div>
+      <h2 id="s6-title"></h2>
+      <p id="s6-text" class="typewriter"></p>
+      <div class="btn-row">
+        <button class="btn ghost" data-prev>← Geri</button>
+        <button class="btn" id="restart-btn">🎬 Baştan İzle</button>
+        <button class="btn" id="celebrate-btn">💖 Kutla</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div id="progress-dots">
+  <span class="dot active" data-dot="1"></span>
+  <span class="dot" data-dot="2"></span>
+  <span class="dot" data-dot="3"></span>
+  <span class="dot" data-dot="4"></span>
+  <span class="dot" data-dot="5"></span>
+  <span class="dot" data-dot="6"></span>
+</div>
+
+<script>
+/* ================================================================
+   1) ARKA PLAN PARÇACIK SİSTEMİ — yıldızlar, kalpler, parıltılar
+   ================================================================ */
+(function(){
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let w, h, particles = [];
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function resize(){
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function rand(min, max){ return Math.random() * (max - min) + min; }
+
+  // Parçacık tipleri: 'star' (yıldız), 'heart' (kalp), 'sparkle' (parıltı)
+  function createParticle(){
+    const types = ['star','star','star','heart','sparkle'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    return {
+      type,
+      x: rand(0, w),
+      y: rand(0, h),
+      size: type === 'heart' ? rand(6, 14) : rand(1, 3),
+      speed: rand(0.15, 0.5),
+      drift: rand(-0.2, 0.2),
+      alpha: rand(0.25, 0.9),
+      alphaDir: Math.random() > 0.5 ? 1 : -1,
+      hue: type === 'heart' ? '#ff6f9c' : (type === 'sparkle' ? '#ffd166' : '#ffffff')
+    };
+  }
+
+  const COUNT = window.innerWidth < 600 ? 55 : 110;
+  for(let i=0; i<COUNT; i++) particles.push(createParticle());
+
+  function drawHeart(x, y, size, color, alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(x, y);
+    ctx.scale(size/14, size/14);
+    ctx.beginPath();
+    ctx.moveTo(0, 4);
+    ctx.bezierCurveTo(0, 0, -7, -6, -7, -1);
+    ctx.bezierCurveTo(-7, 3, -3, 6, 0, 9);
+    ctx.bezierCurveTo(3, 6, 7, 3, 7, -1);
+    ctx.bezierCurveTo(7, -6, 0, 0, 0, 4);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawSparkle(x, y, size, color, alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x - size*2, y); ctx.lineTo(x + size*2, y);
+    ctx.moveTo(x, y - size*2); ctx.lineTo(x, y + size*2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function tick(){
+    ctx.clearRect(0, 0, w, h);
+    particles.forEach(p => {
+      p.y -= p.speed;
+      p.x += p.drift;
+      p.alpha += 0.004 * p.alphaDir;
+      if(p.alpha <= 0.15 || p.alpha >= 0.95) p.alphaDir *= -1;
+      if(p.y < -20){ p.y = h + 20; p.x = rand(0, w); }
+      if(p.x < -20) p.x = w + 20;
+      if(p.x > w + 20) p.x = -20;
+
+      if(p.type === 'star'){
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(255,255,255,${p.alpha})`;
+        ctx.fill();
+      } else if(p.type === 'heart'){
+        drawHeart(p.x, p.y, p.size, p.hue, p.alpha * 0.85);
+      } else {
+        drawSparkle(p.x, p.y, p.size, p.hue, p.alpha);
+      }
+    });
+    if(!reduceMotion) requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ================================================================
+   2) DAKTİLO (TYPEWRITER) EFEKTİ
+   ================================================================ */
+function typeWriter(el, text, speed, onDone){
+  el.classList.remove('done');
+  el.textContent = '';
+  const chars = Array.from(text); // emoji / özel karakterleri doğru işlemek için
+  let i = 0;
+  (function step(){
+    if(i < chars.length){
+      el.textContent += chars[i];
+      i++;
+      setTimeout(step, speed);
+    } else {
+      el.classList.add('done');
+      if(onDone) onDone();
+    }
+  })();
+}
+
+/* Liste öğelerini sırayla görünür kılan yardımcı fonksiyon */
+function revealListStagger(listEl, delay){
+  const items = listEl.querySelectorAll('.reason-item');
+  items.forEach((item, idx) => {
+    setTimeout(() => item.classList.add('show'), idx * delay);
+  });
+}
+
+/* ================================================================
+   3) SAHNE (SCENE) YÖNETİMİ — filmi ilerletme mantığı
+   ================================================================ */
+const scenes = Array.from(document.querySelectorAll('.scene'));
+const dots = Array.from(document.querySelectorAll('.dot'));
+let currentIndex = 1;
+const typedScenes = new Set();
+
+function updateDots(index){
+  dots.forEach(d => d.classList.toggle('active', Number(d.dataset.dot) === index));
+}
+
+function runSceneEntrance(index){
+  if(typedScenes.has(index)) return; // aynı sahneyi tekrar tekrar yazmasın
+  typedScenes.add(index);
+
+  if(index === 1){
+    typeWriter(document.getElementById('s1-title'), 'Merhaba güzelim ❤️', 55);
+    setTimeout(() => {
+      typeWriter(document.getElementById('s1-text'),
+        'Bu siteyi sadece senin için hazırladım. Hazırsan küçük bir yolculuğa çıkalım...', 32);
+    }, 900);
+  }
+  if(index === 2){
+    revealListStagger(document.getElementById('reason-list'), 220);
+  }
+  if(index === 6){
+    typeWriter(document.getElementById('s6-title'), 'İyi ki hayatımdasın ❤️', 55);
+    setTimeout(() => {
+      typeWriter(document.getElementById('s6-text'),
+        'Seni bugün de, yarın da, her zaman çok seveceğim. Bu hikâye burada bitmiyor... Daha yeni başlıyor.', 30);
+    }, 900);
+    setTimeout(() => { launchConfetti(); launchHeartRain(); }, 1600);
+  }
+}
+
+function goToScene(index){
+  if(index < 1 || index > scenes.length || index === currentIndex) return;
+  const current = document.getElementById('scene-' + currentIndex);
+  const next = document.getElementById('scene-' + index);
+
+  current.classList.add('leaving');
+  current.classList.remove('active');
+
+  setTimeout(() => {
+    current.classList.remove('leaving');
+    next.classList.add('active');
+    updateDots(index);
+    runSceneEntrance(index);
+    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  }, 550);
+
+  currentIndex = index;
+}
+
+// İleri / geri butonlarını bağla
+document.querySelectorAll('[data-next]').forEach(btn => {
+  btn.addEventListener('click', () => goToScene(currentIndex + 1));
+});
+document.querySelectorAll('[data-prev]').forEach(btn => {
+  btn.addEventListener('click', () => goToScene(currentIndex - 1));
+});
+document.getElementById('restart-btn').addEventListener('click', () => {
+  typedScenes.clear();
+  goToScene(1);
+});
+
+// Sahne ilerleme noktalarına tıklanınca da geçiş yapılabilsin
+dots.forEach(dot => {
+  dot.addEventListener('click', () => goToScene(Number(dot.dataset.dot)));
+});
+
+/* ================================================================
+   4) İLTİFAT KARTLARI
+   ================================================================ */
+const compliments = [
+  'Gülüşün bir odayı aydınlatabilir.',
+  'Sen, biriyle tanıştığım en içten insansın.',
+  'Yanında kendim olmaktan hiç çekinmiyorum.',
+  'Enerjin, en kötü günümü bile değiştirebiliyor.',
+  'Kalbin, tanıdığım en güzel kalp.',
+  'Sen, biriyle çok kolay ama çok özel bağ kurulabileceğinin kanıtısın.',
+  'Sadece varlığın bile beni mutlu etmeye yetiyor.',
+  'Gözlerinde her zaman bir hikâye var, ve ben onu dinlemeyi seviyorum.',
+  'Sen, hayal ettiğimden çok daha güzelsin.',
+  'Seninle geçen zaman, en sevdiğim zaman dilimi.'
+];
+let lastComplimentIndex = -1;
+const complimentEl = document.getElementById('compliment-text');
+
+function showRandomCompliment(){
+  let idx;
+  do { idx = Math.floor(Math.random() * compliments.length); }
+  while(idx === lastComplimentIndex && compliments.length > 1);
+  lastComplimentIndex = idx;
+
+  complimentEl.classList.add('swap');
+  setTimeout(() => {
+    complimentEl.textContent = compliments[idx];
+    complimentEl.classList.remove('swap');
+  }, 220);
+}
+document.getElementById('new-compliment').addEventListener('click', showRandomCompliment);
+
+/* ================================================================
+   5) MEKTUP / ŞİİR — localStorage ile kaydetme
+   ================================================================ */
+function setupSavableArea(areaId, saveBtnId, noteId, storageKey){
+  const area = document.getElementById(areaId);
+  const saveBtn = document.getElementById(saveBtnId);
+  const note = document.getElementById(noteId);
+
+  const saved = localStorage.getItem(storageKey);
+  if(saved) area.textContent = saved;
+
+  saveBtn.addEventListener('click', () => {
+    localStorage.setItem(storageKey, area.textContent);
+    note.classList.add('show');
+    setTimeout(() => note.classList.remove('show'), 1800);
+  });
+}
+setupSavableArea('letter-area', 'save-letter', 'letter-save-note', 'romantic-site-letter');
+setupSavableArea('poem-area', 'save-poem', 'poem-save-note', 'romantic-site-poem');
+
+/* ================================================================
+   6) KONFETİ VE KALP YAĞMURU EFEKTLERİ
+   ================================================================ */
+const confettiColors = ['#e63950', '#ff6f9c', '#9d4edd', '#ffd166', '#fdf0f5'];
+
+function launchConfetti(){
+  const container = document.getElementById('confetti-container');
+  for(let i = 0; i < 60; i++){
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.background = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+    piece.style.animationDuration = (2.5 + Math.random() * 2) + 's';
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    container.appendChild(piece);
+    setTimeout(() => piece.remove(), 5000);
+  }
+}
+
+function launchHeartRain(){
+  const container = document.getElementById('heart-rain-container');
+  const emojis = ['❤️','💕','💖','💗'];
+  for(let i = 0; i < 26; i++){
+    const heart = document.createElement('div');
+    heart.className = 'falling-heart';
+    heart.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    heart.style.left = Math.random() * 100 + 'vw';
+    heart.style.animationDuration = (3 + Math.random() * 2.5) + 's';
+    heart.style.fontSize = (1 + Math.random() * 1.4) + 'rem';
+    container.appendChild(heart);
+    setTimeout(() => heart.remove(), 6000);
+  }
+}
+
+document.getElementById('celebrate-btn').addEventListener('click', () => {
+  launchConfetti();
+  launchHeartRain();
+});
+
+/* ================================================================
+   7) ARKA PLAN MÜZİĞİ — aç/kapat düğmesi
+   Not: Kendi müzik dosyanı bu HTML dosyasıyla aynı klasöre
+   "muzik.mp3" adıyla eklersen, düğme otomatik olarak çalışır.
+   ================================================================ */
+const music = document.getElementById('bg-music');
+const musicBtn = document.getElementById('music-toggle');
+let musicPlaying = false;
+
+musicBtn.addEventListener('click', () => {
+  if(!musicPlaying){
+    music.play().then(() => {
+      musicPlaying = true;
+      musicBtn.textContent = '🔊';
+    }).catch(() => {
+      // Tarayıcı otomatik oynatmayı engellemiş olabilir ya da
+      // muzik.mp3 dosyası henüz eklenmemiş olabilir.
+      musicBtn.textContent = '🎵';
+    });
+  } else {
+    music.pause();
+    musicPlaying = false;
+    musicBtn.textContent = '🔇';
+  }
+});
+
+/* ================================================================
+   8) SİNEMATİK AÇILIŞIN KAPANMASI VE SAHNE 1'İN BAŞLAMASI
+   ================================================================ */
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('cinematic-loader').classList.add('hidden');
+    runSceneEntrance(1);
+  }, 2200);
+});
+</script>
+
+</body>
+</html>
